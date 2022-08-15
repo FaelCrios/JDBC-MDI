@@ -1,0 +1,21 @@
+Rode o servidor para que possa funcionar aplicacao
+    java -classpath .;hsql.jar org.hsql.Server
+
+
+Comandos para rodar a tabela:
+Antes de tudo, execute o : 
+    javac Acoes.java
+    java -classpath .;hsql.jar Acoes
+para criar a tabela de BD de acoes
+
+*OBS para visualizar melhor a funcao de Mostrar todos os usuários, favor inserir no bando de dados atraves da aba de inserir
+
+
+
+Em seguida execute o comando:
+    javac Aplicacao.java
+    java -classpath .;hsql.jar Aplicacao
+
+
+
+

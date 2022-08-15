@@ -1,0 +1,217 @@
+<HTML>
+<HEAD>
+<LINK REL=STYLESHEET TYPE="text/css" HREF="stylesheet.css" TITLE="Style">
+<TITLE>Hypersonic SQL</TITLE></HEAD>
+<BODY BGCOLOR=#FFFFFF>
+<FONT FACE="Arial, Helvetica" SIZE="2">
+
+<H2>Find File Example</H2>
+<P>
+This application searches files in a database.
+<P>
+This example application is designed for programers that are new to JDBC.
+The functionality is kept low, so it should be possible to understand what 
+is going on. It connects, execute queries and inserts against the database.
+<P>
+<H3>Usage</H3>
+<P>
+First, the database must be initialized with a path. The file names of 
+this directory and all its subdirectories will be stored in the database:
+<P>
+<FONT SIZE=3>
+<CODE>java FindFile -init .</CODE><BR>
+<P>
+<CODE>Re-creating the database...</CODE><BR>
+<CODE>Finished</CODE><BR></FONT>
+<P>
+After this is made, the database can be searched for files that matches
+a specific pattern, for example all files containing 'stat' in the path or
+filename:
+<P>
+<FONT SIZE=3>
+<CODE>java FindFile stat</CODE><BR>
+<P>
+<CODE>Files like 'stat'</CODE><BR>
+<CODE>.\org\hsql\jdbcPreparedStatement.class</CODE><BR>
+<CODE>.\org\hsql\jdbcStatement.class</CODE></FONT>
+
+<P>
+<H3>Source code</H3>
+<P>
+Here is the source code for this application. This source code
+is colorized using Java2HTML (see <A HREF="hSqlLinks.html">Links</A>).
+<FONT SIZE=3>
+
+
+
+
+<pre ID="Classes"><FONT ID="MultiLineComment">/*
+ * FindFile.java
+ */</FONT>
+
+<FONT ID="Import">package</FONT> org.hsql.util;
+<FONT ID="Import">import</FONT> java.sql.*;
+<FONT ID="Import">import</FONT> java.io.*;
+
+<FONT ID="Class">class</FONT> FindFile {
+
+  <FONT ID="SingleLineComment">// The entry point of this class
+</FONT>  <FONT ID="Public">public</FONT> <FONT ID="Static">static</FONT> <FONT ID="Void">void</FONT> main(String arg[]) {
+
+    <FONT ID="SingleLineComment">// Exceptions may occur
+</FONT>    <FONT ID="Try">try</FONT> {
+
+      <FONT ID="SingleLineComment">// Load the Hypersonic SQL JDBC driver
+</FONT>      Class.forName(<FONT ID="StringLiteral">"org.hsql.jdbcDriver"</FONT>);
+
+      <FONT ID="SingleLineComment">// Connect to the database
+</FONT>      <FONT ID="SingleLineComment">// It will be create automatically if it does not yet exist
+</FONT>      <FONT ID="SingleLineComment">// 'testfiles' in the URL is the name of the database
+</FONT>      <FONT ID="SingleLineComment">// "sa" is the user name and "" is the (empty) password
+</FONT>      Connection conn=DriverManager.getConnection(
+        <FONT ID="StringLiteral">"jdbc:HypersonicSQL:testfiles"</FONT>,<FONT ID="StringLiteral">"sa"</FONT>,<FONT ID="StringLiteral">""</FONT>
+      );
+
+      <FONT ID="SingleLineComment">// Check the command line parameters
+</FONT>      <FONT ID="If">if</FONT>(arg.length==<FONT ID="IntegerLiteral">1</FONT>) {
+
+        <FONT ID="SingleLineComment">// One parameter:
+</FONT>        <FONT ID="SingleLineComment">// Find and print the list of files that are like this
+</FONT>        listFiles(conn,arg[<FONT ID="IntegerLiteral">0</FONT>]);
+
+      } <FONT ID="Else">else</FONT> <FONT ID="If">if</FONT>(arg.length==<FONT ID="IntegerLiteral">2</FONT> &amp;&amp; arg[<FONT ID="IntegerLiteral">0</FONT>].equals(<FONT ID="StringLiteral">"-init"</FONT>)) {
+
+        <FONT ID="SingleLineComment">// Command line parameters: -init pathname
+</FONT>        <FONT ID="SingleLineComment">// Init the database and fill all file names in
+</FONT>        fillFileNames(conn,arg[<FONT ID="IntegerLiteral">1</FONT>]);
+
+      } <FONT ID="Else">else</FONT> {
+
+        <FONT ID="SingleLineComment">// Display the usage info
+</FONT>        System.out.println(<FONT ID="StringLiteral">"Usage:"</FONT>);
+        System.out.println(<FONT ID="StringLiteral">"java FindFile -init ."</FONT>);
+        System.out.println(<FONT ID="StringLiteral">"  Re-create database from directory '.'"</FONT>);
+        System.out.println(<FONT ID="StringLiteral">"java FindFile name"</FONT>);
+        System.out.println(<FONT ID="StringLiteral">"  Find files like 'name'"</FONT>);
+      }
+
+      <FONT ID="SingleLineComment">// Finally, close the connection
+</FONT>      conn.close();
+
+    } <FONT ID="Catch">catch</FONT>(Exception e) {
+
+      <FONT ID="SingleLineComment">// Print out the error message
+</FONT>      System.out.println(e);
+    }
+
+  }
+
+  <FONT ID="SingleLineComment">// Search in the database and list out files like this
+</FONT>  <FONT ID="Static">static</FONT> <FONT ID="Void">void</FONT> listFiles(Connection conn,String name) 
+  <FONT ID="Throws">throws</FONT> SQLException {
+
+    System.out.println(<FONT ID="StringLiteral">"Files like '"</FONT>+name+<FONT ID="StringLiteral">"'"</FONT>);
+
+    <FONT ID="SingleLineComment">// Convert to upper case, so the search is case-insensitive
+</FONT>    name=name.toUpperCase();
+
+    <FONT ID="SingleLineComment">// Create a statement object
+</FONT>    Statement stat=conn.createStatement();
+
+    <FONT ID="SingleLineComment">// Now execute the search query
+</FONT>    <FONT ID="SingleLineComment">// UCASE: This is a case insensitive search
+</FONT>    <FONT ID="SingleLineComment">// ESCAPE ':' is used so it can be easily searched for '\'
+</FONT>    ResultSet result=stat.executeQuery(
+      <FONT ID="StringLiteral">"SELECT Path FROM Files WHERE "</FONT>+
+      <FONT ID="StringLiteral">"UCASE(Path) LIKE '%"</FONT>+name+<FONT ID="StringLiteral">"%' ESCAPE ':'"</FONT>);
+
+    <FONT ID="SingleLineComment">// Moves to the next record until no more records
+</FONT>    <FONT ID="While">while</FONT>(result.next()) {
+
+      <FONT ID="SingleLineComment">// Print the first column of the result 
+</FONT>      <FONT ID="SingleLineComment">// could use also getString("Path")
+</FONT>      System.out.println(result.getString(<FONT ID="IntegerLiteral">1</FONT>));
+
+    }
+
+    <FONT ID="SingleLineComment">// Close the ResultSet - not really necessary, but recommended
+</FONT>    result.close();
+  }
+
+  <FONT ID="SingleLineComment">// Re-create the database and fill the file names in
+</FONT>  <FONT ID="Static">static</FONT> <FONT ID="Void">void</FONT> fillFileNames(Connection conn,String root) 
+  <FONT ID="Throws">throws</FONT> SQLException {
+
+    System.out.println(<FONT ID="StringLiteral">"Re-creating the database..."</FONT>);
+
+    <FONT ID="SingleLineComment">// Create a statement object
+</FONT>    Statement stat=conn.createStatement();
+
+    <FONT ID="SingleLineComment">// Try to drop the table
+</FONT>    <FONT ID="Try">try</FONT> {
+      stat.executeUpdate(<FONT ID="StringLiteral">"DROP TABLE Files"</FONT>);
+    } <FONT ID="Catch">catch</FONT>(SQLException e) {
+      <FONT ID="SingleLineComment">// Ignore Exception, because the table may not yet exist
+</FONT>    }
+
+    <FONT ID="SingleLineComment">// For compatibility to other database, use varchar(255)
+</FONT>    <FONT ID="SingleLineComment">// In Hypersonic SQL, length is unlimited, like Java Strings
+</FONT>    stat.execute(<FONT ID="StringLiteral">"CREATE TABLE Files"</FONT>+
+      <FONT ID="StringLiteral">"(Path varchar(255),Name varchar(255))"</FONT>);
+
+    <FONT ID="SingleLineComment">// Close the Statement object, it is no longer used
+</FONT>    stat.close();
+
+    <FONT ID="SingleLineComment">// Use a PreparedStatement because Path and Name could contain '
+</FONT>    PreparedStatement prep=conn.prepareCall(
+      <FONT ID="StringLiteral">"INSERT INTO Files (Path,Name) VALUES (?,?)"</FONT>
+    );
+
+    <FONT ID="SingleLineComment">// Start with the 'root' directory and recurse all subdirectories
+</FONT>    fillPath(root,<FONT ID="StringLiteral">""</FONT>,prep);
+
+    <FONT ID="SingleLineComment">// Close the PreparedStatement
+</FONT>    prep.close();
+
+    System.out.println(<FONT ID="StringLiteral">"Finished"</FONT>);
+  }
+
+  <FONT ID="SingleLineComment">// Fill the file names, using the PreparedStatement
+</FONT>  <FONT ID="Static">static</FONT> <FONT ID="Void">void</FONT> fillPath(String path,String name,
+  PreparedStatement prep) <FONT ID="Throws">throws</FONT> SQLException {
+
+    File f=<FONT ID="New">new</FONT> File(path);
+    <FONT ID="If">if</FONT>(f.isFile()) {
+    
+      <FONT ID="SingleLineComment">// Clear all Parameters of the PreparedStatement
+</FONT>      prep.clearParameters();
+
+      <FONT ID="SingleLineComment">// Fill the first parameter: Path
+</FONT>      prep.setString(<FONT ID="IntegerLiteral">1</FONT>,path); 
+
+      <FONT ID="SingleLineComment">// Fill the second parameter: Name
+</FONT>      prep.setString(<FONT ID="IntegerLiteral">2</FONT>,name); 
+
+      <FONT ID="SingleLineComment">// Its a file: add it to the table
+</FONT>      prep.execute();
+
+    } <FONT ID="Else">else</FONT> <FONT ID="If">if</FONT>(f.isDirectory()) {
+
+      <FONT ID="If">if</FONT>(!path.endsWith(File.separator)) {
+        path+=File.separator;
+      }
+      String list[]=f.list();
+
+      <FONT ID="SingleLineComment">// Process all files recursivly
+</FONT>      <FONT ID="For">for</FONT>(<FONT ID="Int">int</FONT> i=<FONT ID="IntegerLiteral">0</FONT>;i&lt;list.length;i++) {
+        fillPath(path+list[i],list[i],prep); 
+      }
+    }
+  }
+}</pre>
+
+
+
+
+</FONT>
+</FONT></BODY></HTML>
